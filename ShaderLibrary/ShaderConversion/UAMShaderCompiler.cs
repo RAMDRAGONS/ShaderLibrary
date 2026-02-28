@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static ShaderLibrary.BnshFile;
 
-namespace ShaderLibrary.CompileTool
+namespace ShaderLibrary
 {
     public class UAMShaderCompiler
     {

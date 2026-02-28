@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
@@ -9,6 +9,18 @@
 
   <ItemGroup>
     <PackageReference Include="Silk.NET.OpenGL" Version="2.22.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Ryujinx.Graphics.Shader">
+      <HintPath>..\ShaderLibrary.CompileTool\Libs\Ryujinx.Graphics.Shader.dll</HintPath>
+    </Reference>
+    <Reference Include="Ryujinx.Common">
+      <HintPath>..\ShaderLibrary.CompileTool\Libs\Ryujinx.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="Spv.Generator">
+      <HintPath>..\ShaderLibrary.CompileTool\Libs\Spv.Generator.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

@@ -107,7 +107,13 @@ namespace ShaderLibrary.Switch
             else if (reader.Header.VersionMajor >= 7)
                 reader.ReadBytes(4);
             else
+            {
                 reader.ReadBytes(6);
+                // V5 ResShadingModelData is 224 bytes (0xE0) but the fields above
+                // only consume 192 bytes. The remaining 32 bytes contain V5-specific
+                // data (redundant offset copies and padding) removed in V7+.
+                reader.ReadBytes(32);
+            }
 
             long pos = reader.Position;
 

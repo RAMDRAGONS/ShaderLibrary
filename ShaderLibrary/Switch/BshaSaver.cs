@@ -153,7 +153,27 @@ namespace ShaderLibrary
                 else if (bfsha.BinHeader.VersionMajor >= 7)
                     writer.Write(uint.MaxValue); //padding
                 else
+                {
                     writer.Write(new byte[6]); //padding
+                    // V5 ResShadingModelData is 224 bytes (0xE0). The fields above
+                    // only produce 192 bytes. The remaining 32 bytes contain V5-specific
+                    // duplicate/extra fields removed in V7+:
+                    //   +0:  int32 padding (0)
+                    //   +4:  int32 defaultProgramIndex (copy)
+                    //   +8:  int64 pUniformArray offset (duplicate of sm.uniform_offset)
+                    //   +16: int64 null
+                    //   +24: int64 pShaderProgramArray offset (duplicate of sm.shader_program_offset)
+                    writer.Write((int)0); // padding
+                    writer.Write(model.DefaultProgramIndex); // defaultProgramIndex copy
+
+                    // These are pointer offsets that need relocation entries
+                    var v5ExtraRelocPos = (uint)writer.Position;
+                    RelocationTable.SaveEntry(writer, v5ExtraRelocPos, 3, 1, 1, 0, "V5 extra offsets");
+
+                    sm.v5_extra_uniform_offset = writer.SaveOffset(); // pUniformArray duplicate
+                    writer.Write((ulong)0); // null
+                    sm.v5_extra_program_offset = writer.SaveOffset(); // pShaderProgramArray duplicate
+                }
             }
 
             writer.WriteDictionary(bfsha.ShaderModels, shader_dict_offset);
@@ -272,6 +292,8 @@ namespace ShaderLibrary
 
                 writer.AlignBytes(8);
                 writer.WriteOffset(ofs_list.uniform_offset);
+                if (ofs_list.v5_extra_uniform_offset != 0)
+                    writer.WriteOffset(ofs_list.v5_extra_uniform_offset);
 
                 var num_uniforms =
                    (uint)model.UniformBlocks.Values.Sum(x => x.Uniforms.Count);
@@ -293,6 +315,8 @@ namespace ShaderLibrary
 
                 writer.AlignBytes(8);
                 writer.WriteOffset(ofs_list.shader_program_offset);
+                if (ofs_list.v5_extra_program_offset != 0)
+                    writer.WriteOffset(ofs_list.v5_extra_program_offset);
 
                 uint num_offsets = 2;
                 if (bfsha.BinHeader.VersionMajor >= 8)
@@ -308,8 +332,14 @@ namespace ShaderLibrary
                 else if (bfsha.BinHeader.VersionMajor == 5)
                     num_padding = 6;
 
+                // paddingCount = total non-pointer qwords between consecutive pointer groups
+                // Total struct size in qwords: (num_offsets + 1 + num_padding) for V5 (=7), 
+                // same for V7 (=7), V8 (=8). The "+1" accounts for shaderVariation being
+                // handled by a separate entry.
+                uint progPaddingCount = (uint)(num_padding + 1) - num_offsets;
+
                 RelocationTable.SaveEntry(writer, num_offsets,
-                          (uint)model.Programs.Count, 4, 0, "Shader Programs");
+                          (uint)model.Programs.Count, progPaddingCount, 0, "Shader Programs");
 
                 RelocationTable.SaveEntry(writer, (uint)writer.Position + (num_offsets * 8), 1,
                           (uint)model.Programs.Count, num_padding, 1, "Shader Variations");
@@ -361,8 +391,8 @@ namespace ShaderLibrary
                         writer.Write((ushort)prog.UniformBlockIndices.Count);
                         writer.Write(new byte[6]);
 
-                        RelocationTable.SaveEntry(writer, (uint)writer.Position, 1, 1, 0, 0, "Shader Program v5 unk offset");
-                        writer.Write(new byte[8]); //version 5 is weird, write this unused pointer 
+                        // V5 extra 8-byte pointer: points to end of uniform block location table
+                        prog._v5ExtraOfsPos = writer.SaveOffset();
                     }
                     else
                     {
@@ -540,6 +570,9 @@ namespace ShaderLibrary
                     if (bfsha.BinHeader.VersionMajor >= 8)
                         SaveLocations(prog.ImageIndices, prog._imageTableOfsPos);
                     SaveLocations(prog.UniformBlockIndices, prog._uniformBlockTableOfsPos);
+                    // V5 extra pointer: resolve to current position (end of uniform block table)
+                    if (prog._v5ExtraOfsPos != 0)
+                        writer.WriteOffset(prog._v5ExtraOfsPos);
                     if (bfsha.BinHeader.VersionMajor >= 7)
                         SaveLocations(prog.StorageBufferIndices, prog._storageBlockTableOfsPos);
                 }
@@ -643,6 +676,10 @@ namespace ShaderLibrary
             public long key_searcher_offset;
             public long symbols_offset;
             public long bnsh_offset;
+
+            // V5-specific duplicate offsets (extra 32 bytes in ResShadingModelData)
+            public long v5_extra_uniform_offset;
+            public long v5_extra_program_offset;
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using BfshaLibrary.WiiU;
+using BfshaLibrary.WiiU;
 using ShaderLibrary.Common;
 using ShaderLibrary.IO;
 using Silk.NET.OpenGL;
@@ -100,7 +100,7 @@ namespace ShaderLibrary.WiiU
         {
             public DataBlockHeader Header;
 
-            public byte[] Data;
+            public byte[] Data = null!;
         }
 
         public class GX2Shader
@@ -463,7 +463,7 @@ namespace ShaderLibrary.WiiU
 
         public class GX2UniformVar
         {
-            public string Name { get; set; }
+            public string Name { get; set; } = null!;
             public GX2ShaderVarType Type { get; set; }
             public uint Count { get; set; }
             public uint Offset { get; set; }
@@ -483,7 +483,7 @@ namespace ShaderLibrary.WiiU
 
         public class GX2SamplerVar
         {
-            public string Name { get; set; }
+            public string Name { get; set; } = null!;
             public GX2SamplerVarType Type { get; set; }
             public uint Location { get; set; }
 
@@ -499,7 +499,7 @@ namespace ShaderLibrary.WiiU
 
         public class GX2UniformBlock
         {
-            public string Name { get; set; }
+            public string Name { get; set; } = null!;
             public uint Offset { get; set; }
             public uint Size { get; set; }
 
@@ -515,7 +515,7 @@ namespace ShaderLibrary.WiiU
 
         public class GX2AttributeVar
         {
-            public string Name { get; set; }
+            public string Name { get; set; } = null!;
             public GX2ShaderVarType Type { get; set; }
             public uint Count { get; set; }
             public int Location { get; set; }

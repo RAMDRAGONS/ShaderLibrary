@@ -710,6 +710,7 @@ namespace ShaderLibrary
         internal long _shaderVariationOfsPos;
         internal long _imageTableOfsPos;
         internal long _storageBlockTableOfsPos;
+        internal long _v5ExtraOfsPos;
 
         public ShaderModel ParentShader { get; internal set; }
 
